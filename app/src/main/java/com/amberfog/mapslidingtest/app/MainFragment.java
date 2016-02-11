@@ -27,8 +27,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,6 +43,7 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
@@ -52,8 +54,12 @@ import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 
 import java.util.ArrayList;
 
-public class MainFragment extends Fragment implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
+public class MainFragment extends Fragment implements GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener, OnMapReadyCallback,
         SlidingUpPanelLayout.PanelSlideListener, LocationListener, HeaderAdapter.ItemClickListener {
+
+    private static final String TAG = MainFragment.class.getSimpleName();
+
 
     private static final String ARG_LOCATION = "arg.location";
 
@@ -138,6 +144,8 @@ public class MainFragment extends Fragment implements GoogleApiClient.Connection
         }
 
         mMapFragment = SupportMapFragment.newInstance();
+        mMapFragment.getMapAsync(this);
+
         FragmentTransaction fragmentTransaction = getChildFragmentManager().beginTransaction();
         fragmentTransaction.add(R.id.mapContainer, mMapFragment, "map");
         fragmentTransaction.commit();
@@ -171,33 +179,53 @@ public class MainFragment extends Fragment implements GoogleApiClient.Connection
                 .addOnConnectionFailedListener(this)
                 .build();
 
-        setUpMapIfNeeded();
     }
 
+    @SuppressWarnings("location")
     private void setUpMapIfNeeded() {
-        // Do a null check to confirm that we have not already instantiated the map.
-        if (mMap == null) {
-            // Try to obtain the map from the SupportMapFragment.
-            mMap = mMapFragment.getMap();
-            // Check if we were successful in obtaining the map.
-            if (mMap != null) {
-                mMap.setMyLocationEnabled(false);
-                mMap.getUiSettings().setCompassEnabled(false);
-                mMap.getUiSettings().setZoomControlsEnabled(false);
-                mMap.getUiSettings().setMyLocationButtonEnabled(false);
-                LatLng update = getLastKnownLocation();
-                if (update != null) {
-                    mMap.moveCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.fromLatLngZoom(update, 11.0f)));
+        if (mMap != null) {
+            if (isLocationPermissionGranted()) {
+                try {
+
+                    mMap.setMyLocationEnabled(false);
+                } catch (SecurityException e) {
+                    Log.d(TAG, "Location request error " + e);
                 }
-                mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
-                    @Override
-                    public void onMapClick(LatLng latLng) {
-                        mIsNeedLocationUpdate = false;
-                        moveToLocation(latLng, false);
-                    }
-                });
             }
+            mMap.getUiSettings().setCompassEnabled(false);
+            mMap.getUiSettings().setZoomControlsEnabled(false);
+            mMap.getUiSettings().setMyLocationButtonEnabled(false);
+            LatLng update = getLastKnownLocation();
+            if (update != null) {
+                mMap.moveCamera(CameraUpdateFactory.newCameraPosition(CameraPosition
+                        .fromLatLngZoom(update, 11.0f)));
+            }
+            mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+                @Override
+                public void onMapClick(LatLng latLng) {
+                    mIsNeedLocationUpdate = false;
+                    moveToLocation(latLng, false);
+                }
+            });
         }
+    }
+
+    private boolean isLocationPermissionGranted() {
+        boolean isLocationPermissionGranted = (ContextCompat.checkSelfPermission(TheApp.getAppContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED);
+
+        Log.i(TAG, "isLocationPermissionGranted called and returns " + isLocationPermissionGranted);
+
+        return isLocationPermissionGranted;
+    }
+
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        Log.i(TAG, "onMapReady!");
+        mMap = googleMap;
+        setUpMapIfNeeded();
     }
 
     @Override
@@ -345,7 +373,15 @@ public class MainFragment extends Fragment implements GoogleApiClient.Connection
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
         mLocationRequest.setNumUpdates(1);
 
-        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+        if (isLocationPermissionGranted()) {
+            try {
+                LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
+                        mLocationRequest, this);
+            } catch (SecurityException e) {
+                Log.d(TAG, "error requesting location " + e);
+            }
+
+        }
     }
 
     @Override
@@ -360,6 +396,6 @@ public class MainFragment extends Fragment implements GoogleApiClient.Connection
 
     @Override
     public void onItemClicked(int position) {
-        mSlidingUpPanelLayout.collapsePane();
+        //TODO go to business detail page.
     }
 }

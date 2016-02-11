@@ -2,37 +2,37 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <com.sothree.slidinguppanel.SlidingUpPanelLayout
         android:id="@+id/slidingLayout"
         android:gravity="bottom"
         app:shadowHeight="0dp"
         app:paralaxOffset="@dimen/paralax_offset"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent">
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
         <FrameLayout
             android:gravity="top"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent">
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
 
             <RelativeLayout
                 android:id="@+id/mapContainer"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"/>
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
         </FrameLayout>
 
         <RelativeLayout
             android:id="@+id/slidingContainer"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent">
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
 
             <View
                 android:id="@+id/transparentView"
                 android:visibility="gone"
-                android:layout_width="fill_parent"
+                android:layout_width="match_parent"
                 android:layout_height="@dimen/map_height"
                 android:layout_alignParentTop="true"/>
 
@@ -51,8 +51,8 @@
                 android:dividerHeight="@dimen/divider_height"
                 android:divider="@android:color/darker_gray"
                 android:background="@android:color/transparent"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 android:layout_below="@id/transparentView"
                 android:smoothScrollbar="false"/>
         </RelativeLayout>
