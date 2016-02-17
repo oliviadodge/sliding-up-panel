@@ -9,7 +9,7 @@
         android:id="@+id/slidingLayout"
         android:gravity="bottom"
         app:shadowHeight="0dp"
-        app:umanoDragView="@+id/drag_view_header"
+        app:dragView="@+id/drag_view_header"
         app:paralaxOffset="@dimen/paralax_offset"
         android:layout_width="match_parent"
         android:layout_height="match_parent">

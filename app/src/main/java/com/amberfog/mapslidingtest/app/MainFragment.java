@@ -34,6 +34,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -102,12 +103,11 @@ public class MainFragment extends Fragment implements GoogleApiClient.Connection
         mListView.setOverScrollMode(ListView.OVER_SCROLL_NEVER);
 
         mSlidingUpPanelLayout = (SlidingUpPanelLayout) rootView.findViewById(R.id.slidingLayout);
-        mSlidingUpPanelLayout.setTouchEnabled(true);
 
         int mapHeight = getResources().getDimensionPixelSize(R.dimen.map_height);
         mSlidingUpPanelLayout.setPanelHeight(mapHeight); // you can use different height here
-        mSlidingUpPanelLayout.setShadowHeight(0);
-        mSlidingUpPanelLayout.setDragView(R.id.drag_view_header);
+        TextView tv = (TextView)  rootView.findViewById(R.id.drag_view_header);
+        mSlidingUpPanelLayout.setDragView(tv);
         mSlidingUpPanelLayout.setAnchorPoint(0.5f);
 //        mSlidingUpPanelLayout.setScrollableView(mListView);
 
@@ -328,10 +328,6 @@ public class MainFragment extends Fragment implements GoogleApiClient.Connection
         }
     }
 
-    @Override
-    public void onPanelHidden(View panel) {
-
-    }
 
     @Override
     public void onPanelSlide(View view, float v) {
