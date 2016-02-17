@@ -9,6 +9,7 @@
         android:id="@+id/slidingLayout"
         android:gravity="bottom"
         app:shadowHeight="0dp"
+        app:umanoDragView="@+id/drag_view_header"
         app:paralaxOffset="@dimen/paralax_offset"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -24,25 +25,18 @@
                 android:layout_height="match_parent"/>
         </FrameLayout>
 
-        <RelativeLayout
+        <LinearLayout
             android:id="@+id/slidingContainer"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
-            <View
-                android:id="@+id/transparentView"
-                android:visibility="gone"
+            <TextView
+                android:id="@id/drag_view_header"
                 android:layout_width="match_parent"
-                android:layout_height="@dimen/map_height"
-                android:layout_alignParentTop="true"/>
-
-            <View
-                android:id="@+id/whiteSpaceView"
-                android:visibility="gone"
-                android:background="@android:color/white"
-                android:layout_marginTop="@dimen/map_height"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"/>
+                android:layout_height="wrap_content"
+                android:padding="20dp"
+                android:text="drag view header!! :D"/>
 
             <com.amberfog.mapslidingtest.app.LockableRecyclerView
                 android:id="@android:id/list"
@@ -53,9 +47,8 @@
                 android:background="@android:color/transparent"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_below="@id/transparentView"
                 android:smoothScrollbar="false"/>
-        </RelativeLayout>
+        </LinearLayout>
     </com.sothree.slidinguppanel.SlidingUpPanelLayout>
 
     <!-- more code here -->

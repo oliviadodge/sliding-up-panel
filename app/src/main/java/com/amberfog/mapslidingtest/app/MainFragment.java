@@ -33,7 +33,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.widget.ListView;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -63,15 +62,13 @@ public class MainFragment extends Fragment implements GoogleApiClient.Connection
 
     private static final String ARG_LOCATION = "arg.location";
 
+    public static final float MAX_ZOOM_LEVEL_EXPANDED_MAP = 14f;
+    public static final float HALF_ZOOM_LEVEL_EXPANDED_MAP = 12.5f;
+
     // private LockableListView mListView;
     private LockableRecyclerView mListView;
     private SlidingUpPanelLayout mSlidingUpPanelLayout;
 
-    // ListView stuff
-    //private View mTransparentHeaderView;
-    //private View mSpaceView;
-    private View mTransparentView;
-    private View mWhiteSpaceView;
 
     private HeaderAdapter mHeaderAdapter;
 
@@ -105,17 +102,17 @@ public class MainFragment extends Fragment implements GoogleApiClient.Connection
         mListView.setOverScrollMode(ListView.OVER_SCROLL_NEVER);
 
         mSlidingUpPanelLayout = (SlidingUpPanelLayout) rootView.findViewById(R.id.slidingLayout);
-        mSlidingUpPanelLayout.setEnableDragViewTouchEvents(true);
+        mSlidingUpPanelLayout.setTouchEnabled(true);
 
         int mapHeight = getResources().getDimensionPixelSize(R.dimen.map_height);
         mSlidingUpPanelLayout.setPanelHeight(mapHeight); // you can use different height here
-        mSlidingUpPanelLayout.setScrollableView(mListView, mapHeight);
+        mSlidingUpPanelLayout.setShadowHeight(0);
+        mSlidingUpPanelLayout.setDragView(R.id.drag_view_header);
+        mSlidingUpPanelLayout.setAnchorPoint(0.5f);
+//        mSlidingUpPanelLayout.setScrollableView(mListView);
 
         mSlidingUpPanelLayout.setPanelSlideListener(this);
 
-        // transparent view at the top of ListView
-        mTransparentView = rootView.findViewById(R.id.transparentView);
-        mWhiteSpaceView = rootView.findViewById(R.id.whiteSpaceView);
 
         // init header view for ListView
         // mTransparentHeaderView = inflater.inflate(R.layout.transparent_header_view, mListView, false);
@@ -123,13 +120,13 @@ public class MainFragment extends Fragment implements GoogleApiClient.Connection
 
         collapseMap();
 
-        mSlidingUpPanelLayout.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                mSlidingUpPanelLayout.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-                mSlidingUpPanelLayout.onPanelDragged(0);
-            }
-        });
+//        mSlidingUpPanelLayout.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+//            @Override
+//            public void onGlobalLayout() {
+//                mSlidingUpPanelLayout.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+//                mSlidingUpPanelLayout.setOnPanelDragged(0);
+//            }
+//        });
 
         return rootView;
     }
@@ -187,14 +184,14 @@ public class MainFragment extends Fragment implements GoogleApiClient.Connection
             if (isLocationPermissionGranted()) {
                 try {
 
-                    mMap.setMyLocationEnabled(false);
+                    mMap.setMyLocationEnabled(true);
                 } catch (SecurityException e) {
                     Log.d(TAG, "Location request error " + e);
                 }
             }
             mMap.getUiSettings().setCompassEnabled(false);
             mMap.getUiSettings().setZoomControlsEnabled(false);
-            mMap.getUiSettings().setMyLocationButtonEnabled(false);
+            mMap.getUiSettings().setMyLocationButtonEnabled(true);
             LatLng update = getLastKnownLocation();
             if (update != null) {
                 mMap.moveCamera(CameraUpdateFactory.newCameraPosition(CameraPosition
@@ -320,25 +317,20 @@ public class MainFragment extends Fragment implements GoogleApiClient.Connection
     }
 
     private void collapseMap() {
-        if (mHeaderAdapter != null) {
-            mHeaderAdapter.showSpace();
-        }
-        mTransparentView.setVisibility(View.GONE);
         if (mMap != null && mLocation != null) {
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(mLocation, 11f), 1000, null);
         }
-        mListView.setScrollingEnabled(true);
     }
 
-    private void expandMap() {
-        if (mHeaderAdapter != null) {
-            mHeaderAdapter.hideSpace();
-        }
-        mTransparentView.setVisibility(View.INVISIBLE);
+    private void expandMap(float zoom) {
         if (mMap != null) {
-            mMap.animateCamera(CameraUpdateFactory.zoomTo(14f), 1000, null);
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(zoom), 1000, null);
         }
-        mListView.setScrollingEnabled(false);
+    }
+
+    @Override
+    public void onPanelHidden(View panel) {
+
     }
 
     @Override
@@ -347,7 +339,7 @@ public class MainFragment extends Fragment implements GoogleApiClient.Connection
 
     @Override
     public void onPanelCollapsed(View view) {
-        expandMap();
+        expandMap(MAX_ZOOM_LEVEL_EXPANDED_MAP);
     }
 
     @Override
@@ -357,7 +349,7 @@ public class MainFragment extends Fragment implements GoogleApiClient.Connection
 
     @Override
     public void onPanelAnchored(View view) {
-
+        expandMap(HALF_ZOOM_LEVEL_EXPANDED_MAP);
     }
 
     @Override

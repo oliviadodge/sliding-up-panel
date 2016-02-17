@@ -20,7 +20,6 @@ import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.widget.ListView;
 
 public class LockableRecyclerView extends RecyclerView {
 
@@ -67,5 +66,4 @@ public class LockableRecyclerView extends RecyclerView {
             return super.onInterceptTouchEvent(ev);
         }
     }
-
 }

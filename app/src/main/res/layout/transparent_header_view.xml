@@ -10,7 +10,7 @@
         android:id="@+id/space"
         android:background="@android:color/transparent"
         android:layout_width="fill_parent"
-        android:layout_height="@dimen/map_height"
-        android:minHeight="@dimen/map_height"
+        android:layout_height="@dimen/list_header_height"
+        android:minHeight="@dimen/list_header_height"
         tools:background="@android:color/holo_orange_light"/>
 </FrameLayout>

@@ -17,8 +17,6 @@ public class HeaderAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     private LayoutInflater mLayoutInflater;
 
-    private boolean mIsSpaceVisible = true;
-
     public interface ItemClickListener {
         void onItemClicked(int position);
     }
@@ -51,7 +49,7 @@ public class HeaderAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             ((MyItem) holder).mTitleView.setText(dataItem);
             ((MyItem) holder).mPosition = position;
         } else if (holder instanceof HeaderItem) {
-            ((HeaderItem) holder).mSpaceView.setVisibility(mIsSpaceVisible ? View.VISIBLE : View.GONE);
+            ((HeaderItem) holder).mSpaceView.setVisibility(View.VISIBLE);
             ((HeaderItem) holder).mPosition = position;
         }
     }
@@ -101,15 +99,5 @@ public class HeaderAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
             }
 
         }
-    }
-
-    public void hideSpace() {
-        mIsSpaceVisible = false;
-        notifyItemChanged(0);
-    }
-
-    public void showSpace() {
-        mIsSpaceVisible = true;
-        notifyItemChanged(0);
     }
 }
