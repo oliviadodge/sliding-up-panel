@@ -20,6 +20,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
@@ -108,10 +109,11 @@ public class MainFragment extends Fragment implements GoogleApiClient.Connection
         mSlidingUpPanelLayout.setPanelHeight(mapHeight); // you can use different height here
         TextView tv = (TextView)  rootView.findViewById(R.id.drag_view_header);
         mSlidingUpPanelLayout.setDragView(tv);
-        mSlidingUpPanelLayout.setAnchorPoint(0.5f);
+        mSlidingUpPanelLayout.setCoveredFadeColor(Color.TRANSPARENT);
+//        mSlidingUpPanelLayout.setAnchorPoint(0.5f);
 //        mSlidingUpPanelLayout.setScrollableView(mListView);
 
-        mSlidingUpPanelLayout.setPanelSlideListener(this);
+                mSlidingUpPanelLayout.setPanelSlideListener(this);
 
 
         // init header view for ListView

@@ -60,6 +60,8 @@ public class SlidingUpPanelLayout extends ViewGroup {
         android.R.attr.gravity
     };
 
+
+
     /**
      * Minimum velocity that will be detected as a fling
      */
@@ -147,12 +149,21 @@ public class SlidingUpPanelLayout extends ViewGroup {
     private int mScrollableViewTopPadding;
 
     /**
+     * Sliding panel mode
+     */
+    public enum SlideMode {
+        DEFAULT_DRAG,
+        CUSTOM_DRAG
+    }
+    private SlideMode mSlideMode = SlideMode.DEFAULT_DRAG;
+    /**
      * Current state of the slideable view.
      */
     private enum SlideState {
         EXPANDED,
         COLLAPSED,
-        ANCHORED
+        ANCHORED,
+        SET
     }
     private SlideState mSlideState = SlideState.COLLAPSED;
 
@@ -194,6 +205,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
     private float mInitialMotionX;
     private float mInitialMotionY;
     private float mAnchorPoint = 0.f;
+    private float mUserSetPoint = 0.f;
 
     private PanelSlideListener mPanelSlideListener;
 
@@ -346,6 +358,26 @@ public class SlidingUpPanelLayout extends ViewGroup {
         if (mDragViewResId != -1) {
             mDragView = findViewById(mDragViewResId);
         }
+    }
+
+    /**
+     * Set the sliding mode used to determine how the pane reacts when released. Default mode
+     * means the pane will slide up or down to the anchor or fully collapsed/expanded state.
+     * Custom drag allows the user to drag the pane to the desired y location. If flung, the pane
+     * will will slide up or down to the anchor or fully collapsed/expanded state.
+     *
+     * @param slideMode One of two values: DEFAULT_DRAG or CUSTOM_DRAG
+     */
+    public void setSlideMode(SlideMode slideMode) {
+        mSlideMode = slideMode;
+        invalidate();
+    }
+
+    /**
+     * @return One of two values: DEFAULT_DRAG or CUSTOM_DRAG
+     */
+    public SlideMode getSlideMode() {
+        return mSlideMode;
     }
 
     /**
@@ -621,6 +653,9 @@ public class SlidingUpPanelLayout extends ViewGroup {
             case ANCHORED:
                 mSlideOffset = mCanSlide ? mAnchorPoint : 1.f;
                 break;
+            case SET:
+                mSlideOffset = mCanSlide ? mUserSetPoint : 1.f;
+                break;
             default:
                 mSlideOffset = 1.f;
                 break;
@@ -639,6 +674,8 @@ public class SlidingUpPanelLayout extends ViewGroup {
 
             if (lp.slideable) {
                 mSlideRange = childHeight - (mPanelHeight + mScrollableViewTopPadding);
+                Log.i(TAG, "mSlideRange set to " + mSlideRange + "based on childHeight " +
+                        childHeight + "and mPanelHeight " + mPanelHeight);
             }
 
             int childTop;
@@ -869,6 +906,15 @@ public class SlidingUpPanelLayout extends ViewGroup {
      */
     public boolean isAnchored() {
         return mSlideState == SlideState.ANCHORED;
+    }
+
+    /**
+     * Check if the layout is set by user in an intermediate point.
+     *
+     * @return true if sliding panels is at a point set by user
+     */
+    public boolean isSet() {
+        return mSlideState == SlideState.SET;
     }
 
     /**
@@ -1128,9 +1174,12 @@ public class SlidingUpPanelLayout extends ViewGroup {
                         dispatchOnPanelAnchored(mSlideableView);
                         mSlideState = SlideState.ANCHORED;
                     }
-                } else if (mSlideState != SlideState.COLLAPSED) {
+                } else if (mSlideOffset == 1.f && mSlideState != SlideState.COLLAPSED) {
                     dispatchOnPanelCollapsed(mSlideableView);
                     mSlideState = SlideState.COLLAPSED;
+                } else if (mSlideState != SlideState.SET) {
+                    dispatchOnPanelSlide(mSlideableView);
+                    mSlideState = SlideState.SET;
                 }
             }
         }
@@ -1172,10 +1221,17 @@ public class SlidingUpPanelLayout extends ViewGroup {
                 }
 
             } else if (yvel > 0 || (yvel == 0 && mSlideOffset > 0.5f)) {
+                Log.d(TAG, "mSlideRange: " + mSlideRange + "top: " + top);
                 top += mSlideRange;
             }
 
-            mDragHelper.settleCapturedViewAt(releasedChild.getLeft(), top);
+            Log.d(TAG, "releasing captured view to top: " + top);
+
+            if (Math.abs(yvel) >= mMinFlingVelocity) {
+                mDragHelper.settleCapturedViewAt(releasedChild.getLeft(), top);
+            } else {
+                mDragHelper.settleCapturedViewAt(releasedChild.getLeft(), releasedChild.getTop());
+            }
             invalidate();
         }
 
