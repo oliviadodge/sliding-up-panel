@@ -107,6 +107,7 @@ public class MainFragment extends Fragment implements GoogleApiClient.Connection
 
         int mapHeight = getResources().getDimensionPixelSize(R.dimen.map_height);
         mSlidingUpPanelLayout.setPanelHeight(mapHeight); // you can use different height here
+        mSlidingUpPanelLayout.setSlideMode(SlidingUpPanelLayout.SlideMode.CUSTOM_DRAG);
         TextView tv = (TextView)  rootView.findViewById(R.id.drag_view_header);
         mSlidingUpPanelLayout.setDragView(tv);
         mSlidingUpPanelLayout.setCoveredFadeColor(Color.TRANSPARENT);
@@ -348,6 +349,11 @@ public class MainFragment extends Fragment implements GoogleApiClient.Connection
     @Override
     public void onPanelAnchored(View view) {
         expandMap(HALF_ZOOM_LEVEL_EXPANDED_MAP);
+    }
+
+    @Override
+    public void onPanelSet(View panel, float slideOffset) {
+
     }
 
     @Override

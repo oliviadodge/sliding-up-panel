@@ -245,6 +245,13 @@ public class SlidingUpPanelLayout extends ViewGroup {
         public void onPanelExpanded(View panel);
 
         public void onPanelAnchored(View panel);
+
+        /**
+         * Called when a sliding pane's position is set.
+         * @param panel The child view that was moved
+         * @param slideOffset The new offset of this sliding pane within its range, from 0-1
+         */
+        public void onPanelSet(View panel, float slideOffset);
     }
 
     /**
@@ -263,6 +270,9 @@ public class SlidingUpPanelLayout extends ViewGroup {
         }
         @Override
         public void onPanelAnchored(View panel) {
+        }
+        @Override
+        public void onPanelSet(View panel, float slideOffset) {
         }
     }
 
@@ -363,8 +373,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
     /**
      * Set the sliding mode used to determine how the pane reacts when released. Default mode
      * means the pane will slide up or down to the anchor or fully collapsed/expanded state.
-     * Custom drag allows the user to drag the pane to the desired y location. If flung, the pane
-     * will will slide up or down to the anchor or fully collapsed/expanded state.
+     * Custom drag allows the user to drag the pane to the desired y location.
      *
      * @param slideMode One of two values: DEFAULT_DRAG or CUSTOM_DRAG
      */
@@ -497,6 +506,13 @@ public class SlidingUpPanelLayout extends ViewGroup {
     void dispatchOnPanelAnchored(View panel) {
         if (mPanelSlideListener != null) {
             mPanelSlideListener.onPanelAnchored(panel);
+        }
+        sendAccessibilityEvent(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
+    }
+
+    void dispatchOnPanelSet(View panel) {
+        if (mPanelSlideListener != null) {
+            mPanelSlideListener.onPanelSet(panel, mUserSetPoint);
         }
         sendAccessibilityEvent(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
     }
@@ -675,7 +691,8 @@ public class SlidingUpPanelLayout extends ViewGroup {
             if (lp.slideable) {
                 mSlideRange = childHeight - (mPanelHeight + mScrollableViewTopPadding);
                 Log.i(TAG, "mSlideRange set to " + mSlideRange + "based on childHeight " +
-                        childHeight + "and mPanelHeight " + mPanelHeight);
+                        childHeight + ", mPanelHeight " + mPanelHeight + " and " +
+                        "mScrollableViewTopPadding " + mScrollableViewTopPadding);
             }
 
             int childTop;
@@ -848,6 +865,9 @@ public class SlidingUpPanelLayout extends ViewGroup {
     }
 
     private int getSlidingTop() {
+        Log.i(TAG, "getSlidingTop called. getMeasuredHeight: " + getMeasuredHeight() + " " +
+                "getPaddingBottom: " + getPaddingBottom() + " mSlideableView.getMeasuredHeight():" +
+                " " + mSlideableView.getMeasuredHeight());
         if (mSlideableView != null) {
             return mIsSlidingUp
                     ? getMeasuredHeight() - getPaddingBottom() - mSlideableView.getMeasuredHeight()
@@ -957,6 +977,8 @@ public class SlidingUpPanelLayout extends ViewGroup {
         mSlideOffset = mIsSlidingUp
                 ? (float) (newTop - topBound) / mSlideRange
                 : (float) (topBound - newTop) / mSlideRange;
+        Log.i(TAG, "onPanelDragged called. newTop is " + newTop + " topBound is " + topBound + " " +
+                "mSlidRange is " + mSlideRange + " making mSlideOffset " + mSlideOffset);
         dispatchOnPanelSlide(mSlideableView);
 
         if (mParalaxOffset > 0) {
@@ -1178,7 +1200,9 @@ public class SlidingUpPanelLayout extends ViewGroup {
                     dispatchOnPanelCollapsed(mSlideableView);
                     mSlideState = SlideState.COLLAPSED;
                 } else if (mSlideState != SlideState.SET) {
-                    dispatchOnPanelSlide(mSlideableView);
+                    updateObscuredViewVisibility();
+                    dispatchOnPanelSet(mSlideableView);
+                    mUserSetPoint = mSlideOffset;
                     mSlideState = SlideState.SET;
                 }
             }
@@ -1201,37 +1225,33 @@ public class SlidingUpPanelLayout extends ViewGroup {
             int top = mIsSlidingUp
                     ? getSlidingTop()
                     : getSlidingTop() - mSlideRange;
+            if (Math.abs(yvel) >= mMinFlingVelocity || mSlideMode == SlideMode.DEFAULT_DRAG) {
+                if (mAnchorPoint != 0) {
+                    int anchoredTop;
+                    float anchorOffset;
+                    if (mIsSlidingUp) {
+                        anchoredTop = (int) (mAnchorPoint * mSlideRange);
+                        anchorOffset = (float) anchoredTop / (float) mSlideRange;
+                    } else {
+                        anchoredTop = mPanelHeight - (int) (mAnchorPoint * mSlideRange);
+                        anchorOffset = (float) (mPanelHeight - anchoredTop) / (float) mSlideRange;
+                    }
 
-            if (mAnchorPoint != 0) {
-                int anchoredTop;
-                float anchorOffset;
-                if (mIsSlidingUp) {
-                    anchoredTop = (int)(mAnchorPoint*mSlideRange);
-                    anchorOffset = (float)anchoredTop/(float)mSlideRange;
-                } else {
-                    anchoredTop = mPanelHeight - (int)(mAnchorPoint*mSlideRange);
-                    anchorOffset = (float)(mPanelHeight - anchoredTop)/(float)mSlideRange;
-                }
+                    if (yvel > 0 || (yvel == 0 && mSlideOffset >= (1f + anchorOffset) / 2)) {
+                        top += mSlideRange;
+                    } else if (yvel == 0 && mSlideOffset < (1f + anchorOffset) / 2
+                            && mSlideOffset >= anchorOffset / 2) {
+                        top += mSlideRange * mAnchorPoint;
+                    }
 
-                if (yvel > 0 || (yvel == 0 && mSlideOffset >= (1f+anchorOffset)/2)) {
+                } else if (yvel > 0 || (yvel == 0 && mSlideOffset > 0.5f)) {
                     top += mSlideRange;
-                } else if (yvel == 0 && mSlideOffset < (1f+anchorOffset)/2
-                                    && mSlideOffset >= anchorOffset/2) {
-                    top += mSlideRange * mAnchorPoint;
                 }
-
-            } else if (yvel > 0 || (yvel == 0 && mSlideOffset > 0.5f)) {
-                Log.d(TAG, "mSlideRange: " + mSlideRange + "top: " + top);
-                top += mSlideRange;
-            }
-
-            Log.d(TAG, "releasing captured view to top: " + top);
-
-            if (Math.abs(yvel) >= mMinFlingVelocity) {
-                mDragHelper.settleCapturedViewAt(releasedChild.getLeft(), top);
             } else {
-                mDragHelper.settleCapturedViewAt(releasedChild.getLeft(), releasedChild.getTop());
+                top = releasedChild.getTop();
             }
+
+            mDragHelper.settleCapturedViewAt(releasedChild.getLeft(), top);
             invalidate();
         }
 
