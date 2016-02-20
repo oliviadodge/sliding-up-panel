@@ -78,16 +78,6 @@ public class SlidingUpPanelLayout extends ViewGroup {
     private static final int DEFAULT_PARALAX_OFFSET = 0;
 
     /**
-     * Default paralax length of the main view
-     */
-    private static final float DEFAULT_ANCHOR_POINT = 0.f;
-
-    /**
-     * Default paralax length of the main view
-     */
-    private static final float DEFAULT_USER_SET_POINT = 0.f;
-
-    /**
      * The paint used to dim the main layout when sliding
      */
     private final Paint mCoveredFadePaint = new Paint();
@@ -214,8 +204,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
 
     private float mInitialMotionX;
     private float mInitialMotionY;
-    private float mAnchorPoint = DEFAULT_ANCHOR_POINT;
-    private float mUserSetPoint = DEFAULT_USER_SET_POINT;
+    private float mAnchorPoint = 0.f;
 
     private PanelSlideListener mPanelSlideListener;
 
@@ -522,7 +511,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
 
     void dispatchOnPanelSet(View panel) {
         if (mPanelSlideListener != null) {
-            mPanelSlideListener.onPanelSet(panel, mUserSetPoint);
+            mPanelSlideListener.onPanelSet(panel, mSlideOffset);
         }
         sendAccessibilityEvent(AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED);
     }
@@ -678,9 +667,6 @@ public class SlidingUpPanelLayout extends ViewGroup {
                 break;
             case ANCHORED:
                 mSlideOffset = mCanSlide ? mAnchorPoint : 1.f;
-                break;
-            case SET:
-                mSlideOffset = mCanSlide ? mUserSetPoint : 1.f;
                 break;
             default:
                 mSlideOffset = 1.f;
@@ -981,7 +967,6 @@ public class SlidingUpPanelLayout extends ViewGroup {
                 ? (float) (newTop - topBound) / mSlideRange
                 : (float) (topBound - newTop) / mSlideRange;
 
-        mUserSetPoint = mSlideOffset;
         dispatchOnPanelSlide(mSlideableView);
 
         if (mParalaxOffset > 0) {
@@ -1160,7 +1145,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
 
         SavedState ss = new SavedState(superState);
         ss.mSlideState = mSlideState;
-        ss.mUserSetPoint = mUserSetPoint;
+        ss.mSlideOffset = mSlideOffset;
 
         return ss;
     }
@@ -1170,7 +1155,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
         SavedState ss = (SavedState) state;
         super.onRestoreInstanceState(ss.getSuperState());
         mSlideState = ss.mSlideState;
-        mUserSetPoint = ss.mUserSetPoint;
+        mSlideOffset = ss.mSlideOffset;
     }
 
     private class DragHelperCallback extends ViewDragHelper.Callback {
@@ -1206,7 +1191,6 @@ public class SlidingUpPanelLayout extends ViewGroup {
                     mSlideState = SlideState.COLLAPSED;
                 } else if (mSlideState != SlideState.SET) {
                     updateObscuredViewVisibility();
-                    mUserSetPoint = mSlideOffset;
                     dispatchOnPanelSet(mSlideableView);
                     mSlideState = SlideState.SET;
                 }
@@ -1330,7 +1314,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
 
     static class SavedState extends BaseSavedState {
         SlideState mSlideState;
-        float mUserSetPoint;
+        float mSlideOffset;
 
         SavedState(Parcelable superState) {
             super(superState);
@@ -1340,10 +1324,10 @@ public class SlidingUpPanelLayout extends ViewGroup {
             super(in);
             try {
                 mSlideState = Enum.valueOf(SlideState.class, in.readString());
-                mUserSetPoint = in.readFloat();
+                mSlideOffset = in.readFloat();
             } catch (IllegalArgumentException e) {
                 mSlideState = SlideState.COLLAPSED;
-                mUserSetPoint = DEFAULT_USER_SET_POINT;
+                mSlideOffset = 1.f;
             }
         }
 
@@ -1351,7 +1335,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
         public void writeToParcel(Parcel out, int flags) {
             super.writeToParcel(out, flags);
             out.writeString(mSlideState.toString());
-            out.writeFloat(mUserSetPoint);
+            out.writeFloat(mSlideOffset);
         }
 
         public static final Parcelable.Creator<SavedState> CREATOR =
