@@ -78,6 +78,16 @@ public class SlidingUpPanelLayout extends ViewGroup {
     private static final int DEFAULT_PARALAX_OFFSET = 0;
 
     /**
+     * Default paralax length of the main view
+     */
+    private static final float DEFAULT_ANCHOR_POINT = 0.f;
+
+    /**
+     * Default paralax length of the main view
+     */
+    private static final float DEFAULT_USER_SET_POINT = 0.f;
+
+    /**
      * The paint used to dim the main layout when sliding
      */
     private final Paint mCoveredFadePaint = new Paint();
@@ -204,8 +214,8 @@ public class SlidingUpPanelLayout extends ViewGroup {
 
     private float mInitialMotionX;
     private float mInitialMotionY;
-    private float mAnchorPoint = 0.f;
-    private float mUserSetPoint = 0.f;
+    private float mAnchorPoint = DEFAULT_ANCHOR_POINT;
+    private float mUserSetPoint = DEFAULT_USER_SET_POINT;
 
     private PanelSlideListener mPanelSlideListener;
 
@@ -690,9 +700,6 @@ public class SlidingUpPanelLayout extends ViewGroup {
 
             if (lp.slideable) {
                 mSlideRange = childHeight - (mPanelHeight + mScrollableViewTopPadding);
-                Log.i(TAG, "mSlideRange set to " + mSlideRange + "based on childHeight " +
-                        childHeight + ", mPanelHeight " + mPanelHeight + " and " +
-                        "mScrollableViewTopPadding " + mScrollableViewTopPadding);
             }
 
             int childTop;
@@ -865,15 +872,11 @@ public class SlidingUpPanelLayout extends ViewGroup {
     }
 
     private int getSlidingTop() {
-        Log.i(TAG, "getSlidingTop called. getMeasuredHeight: " + getMeasuredHeight() + " " +
-                "getPaddingBottom: " + getPaddingBottom() + " mSlideableView.getMeasuredHeight():" +
-                " " + mSlideableView.getMeasuredHeight());
         if (mSlideableView != null) {
             return mIsSlidingUp
                     ? getMeasuredHeight() - getPaddingBottom() - mSlideableView.getMeasuredHeight()
                     : getPaddingTop();
         }
-
         return getMeasuredHeight() - getPaddingBottom();
     }
 
@@ -977,8 +980,8 @@ public class SlidingUpPanelLayout extends ViewGroup {
         mSlideOffset = mIsSlidingUp
                 ? (float) (newTop - topBound) / mSlideRange
                 : (float) (topBound - newTop) / mSlideRange;
-        Log.i(TAG, "onPanelDragged called. newTop is " + newTop + " topBound is " + topBound + " " +
-                "mSlidRange is " + mSlideRange + " making mSlideOffset " + mSlideOffset);
+
+        mUserSetPoint = mSlideOffset;
         dispatchOnPanelSlide(mSlideableView);
 
         if (mParalaxOffset > 0) {
@@ -1157,6 +1160,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
 
         SavedState ss = new SavedState(superState);
         ss.mSlideState = mSlideState;
+        ss.mUserSetPoint = mUserSetPoint;
 
         return ss;
     }
@@ -1166,6 +1170,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
         SavedState ss = (SavedState) state;
         super.onRestoreInstanceState(ss.getSuperState());
         mSlideState = ss.mSlideState;
+        mUserSetPoint = ss.mUserSetPoint;
     }
 
     private class DragHelperCallback extends ViewDragHelper.Callback {
@@ -1201,8 +1206,8 @@ public class SlidingUpPanelLayout extends ViewGroup {
                     mSlideState = SlideState.COLLAPSED;
                 } else if (mSlideState != SlideState.SET) {
                     updateObscuredViewVisibility();
-                    dispatchOnPanelSet(mSlideableView);
                     mUserSetPoint = mSlideOffset;
+                    dispatchOnPanelSet(mSlideableView);
                     mSlideState = SlideState.SET;
                 }
             }
@@ -1325,6 +1330,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
 
     static class SavedState extends BaseSavedState {
         SlideState mSlideState;
+        float mUserSetPoint;
 
         SavedState(Parcelable superState) {
             super(superState);
@@ -1334,8 +1340,10 @@ public class SlidingUpPanelLayout extends ViewGroup {
             super(in);
             try {
                 mSlideState = Enum.valueOf(SlideState.class, in.readString());
+                mUserSetPoint = in.readFloat();
             } catch (IllegalArgumentException e) {
                 mSlideState = SlideState.COLLAPSED;
+                mUserSetPoint = DEFAULT_USER_SET_POINT;
             }
         }
 
@@ -1343,6 +1351,7 @@ public class SlidingUpPanelLayout extends ViewGroup {
         public void writeToParcel(Parcel out, int flags) {
             super.writeToParcel(out, flags);
             out.writeString(mSlideState.toString());
+            out.writeFloat(mUserSetPoint);
         }
 
         public static final Parcelable.Creator<SavedState> CREATOR =
